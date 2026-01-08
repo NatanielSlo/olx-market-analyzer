@@ -31,17 +31,12 @@ async def analyze_data():
                 if item.get('price'):
                     item['price_numeric'] = int(''.join(filter(str.isdigit, item['price'])))
                 
-                # 3. Wykorzystanie Twoich extractorów
-                # Używamy logiki dla pamięci (Storage)
                 storage_raw = item.get('wbudowana_pamięć')
                 item['storage_gb'] = baseprocessor.clean_storage(storage_raw)
                 
-                # Wyciąganie kondycji baterii z opisu
                 description = item.get('description', '')
                 item['battery_health'] = iphoneprocessor.extract_battery(description)
                 
-
-                # 5. Zapisz przetworzony obiekt do nowego plika
                 outfile.write(json.dumps(item, ensure_ascii=False) + '\n')
                 
             except Exception as e:

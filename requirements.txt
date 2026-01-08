@@ -1,4 +1,6 @@
-playwright==1.49.1
-playwright-stealth==1.0.6
-dateparser==1.2.0
-pandas==2.2.3
+playwright==
+playwright-stealth==
+dateparser==
+pandas==
+psycopg2-binary==
+python-dotenv==
