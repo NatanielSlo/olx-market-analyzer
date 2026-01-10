@@ -5,6 +5,7 @@ import asyncio
 
 from src.utils.url_builder import UrlBuilder
 from src.core.pages.search_page import SearchPage
+from src.utils.postgres_uploader import PostgresUploader
 
 from playwright.async_api import async_playwright
 
@@ -18,6 +19,7 @@ class GeneralScraper:
         self.phone_model = PHONE_MODEL
         self.min_price = MIN_PRICE
         self.page_limit = PAGE_LIMIT
+
         
         # Narzędzia (zainicjalizowane jako None, stworzymy je w start())
         self.url_builder = UrlBuilder()
@@ -30,6 +32,7 @@ class GeneralScraper:
         
         # Dane
         self.data_file = INPUT_FILE
+        self.uploader = PostgresUploader()
 
     async def start(self):
         
@@ -53,6 +56,8 @@ class GeneralScraper:
         print("Przeglądarka gotowa do pracy.")
 
     async def run_search(self):
+
+        self.uploader.connect_postgres()
 
         if not self.page:
             await self.start()

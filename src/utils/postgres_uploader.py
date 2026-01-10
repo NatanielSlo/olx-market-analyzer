@@ -5,6 +5,9 @@ import psycopg2
 from psycopg2.extras import execute_values
 from datetime import datetime
 
+
+
+
 class PostgresUploader:
     def __init__(self):
         pass
@@ -84,3 +87,49 @@ class PostgresUploader:
             print("Tabela 'iphone_offers' jest gotowa.")
         except Exception as e:
             print(f"Błąd podczas tworzenia tabeli: {e}")
+
+
+    def filter_new_and_update_seen(self, scraped_products):
+
+        if not scraped_products:
+            return []
+
+        # Wyciągamy same URL-e do sprawdzenia, co już mamy
+        urls = [p['url'] for p in scraped_products]
+        
+        try:
+            cur = self.conn.cursor()
+            
+            cur.execute("SELECT url FROM iphone_offers WHERE url = ANY(%s)", (urls,))
+            existing_urls = {row[0] for row in cur.fetchall()}
+            
+            new_products = [p for p in scraped_products if p['url'] not in existing_urls]
+            old_products_urls = [p['url'] for p in scraped_products if p['url'] in existing_urls]
+            
+            if old_products_urls:
+                # Przygotowujemy dane do update (lista krotek: nowa_data, url)
+                now = datetime.now()
+                update_data = [(now, url) for url in old_products_urls]
+                
+                # Używamy execute_values do masowego update'u
+                update_query = """
+                    UPDATE iphone_offers 
+                    SET last_seen = data.ls
+                    FROM (VALUES %s) AS data(ls, u)
+                    WHERE url = data.u;
+                """
+                from psycopg2.extras import execute_values
+                execute_values(cur, update_query, update_data)
+                
+                print(f"Zaktualizowano 'last_seen' dla {len(old_products_urls)} znanych ofert.")
+
+            self.conn.commit()
+            cur.close()
+            
+            return new_products 
+            
+        except Exception as e:
+            if self.conn:
+                self.conn.rollback()
+            print(f"Błąd bazy danych przy filtrowaniu/aktualizacji: {e}")
+            return []
